@@ -1022,3 +1022,216 @@ img#usrImg {
     height: 2.5vh;
     border-radius: 50%;
 }
+
+
+
+
+.rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.room-card {
+  background: var(--bg1);
+  backdrop-filter: blur(20px);
+  border: 3px solid var(--bdr);
+  border-radius: 15px;
+  padding: 0;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.room-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--room-color);
+}
+
+.room-card.libre {
+  --room-color: #10b981;
+  --room-bg: rgba(16, 185, 129, 0.1);
+}
+
+.room-card.ocupado {
+  --room-color: #ef4444;
+  --room-bg: rgba(239, 68, 68, 0.1);
+}
+
+.room-card.limpieza {
+  --room-color: #06b6d4;
+  --room-bg: rgba(6, 182, 212, 0.1);
+}
+
+.room-card.fuera {
+  --room-color: #f59e0b;
+  --room-bg: rgba(245, 158, 11, 0.1);
+}
+
+.room-card:hover {
+  transform: translateY(-5px) scale(1.03);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+  border-color: var(--room-color);
+}
+
+.room-card:hover .status-select-container {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.room-card .room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+  padding: 1.2rem 1.2rem 0;
+}
+
+.room-card .room-number {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--room-color);
+}
+
+.room-card .status-badge {
+  padding: 0.3rem 0.7rem;
+  background: var(--room-color);
+  color: white;
+  border-radius: 15px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  text-transform: uppercase;
+}
+
+.room-card .room-info {
+  font-size: 0.85rem;
+  color: var(--tx);
+  opacity: 0.9;
+  padding: 0 1.2rem 1.2rem;
+  line-height: 1.6;
+}
+
+.room-card .room-info strong {
+  font-weight: 700;
+}
+
+/* SELECT DE ESTADOS */
+.status-select-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.status-select {
+  width: 100%;
+  padding: 0.8rem 2.5rem 0.8rem 1rem;
+  background: var(--wb);
+  backdrop-filter: blur(20px);
+  border: 3px solid var(--room-color);
+  border-radius: 12px;
+  color: var(--tx);
+  font-family: var(--ff_pop);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--trans_r);
+  outline: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23000' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  text-align: center;
+}
+
+.status-select:hover {
+  transform: scale(1.05);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+}
+
+.status-select:focus {
+  border-width: 4px;
+  transform: scale(1.08);
+}
+
+.status-select option {
+  padding: 1rem;
+  background: var(--wb);
+  color: var(--tx);
+  font-weight: 600;
+}
+
+.status-select-container::before {
+  content: '⚡ Cambiar Estado';
+  position: absolute;
+  top: -2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--room-color);
+  color: white;
+  padding: 0.4rem 1rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  animation: bounceLabel 0.6s ease;
+}
+
+@keyframes bounceLabel {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-5px); }
+}
+
+@media (max-width: 768px) {
+  .rooms-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+}
+
+/* Estilos específicos para datetime-local */
+.form-group input[type="datetime-local"] {
+  padding: 1.3vh 1vw;
+  border: 0.25vh solid var(--bdr);
+  border-radius: 1vh;
+  background: rgba(255, 255, 255, 0.9);
+  font-family: var(--ff_pop);
+  font-weight: 500;
+  color: var(--txe);
+  transition: all var(--trans_m);
+  font-size: clamp(0.8rem, 0.95vw, 0.9rem);
+}
+
+.form-group input[type="datetime-local"]:focus {
+  border-color: var(--mco);
+  box-shadow: 0 0 0 0.3vh var(--bg1);
+  transform: translateY(-0.1vh);
+  background: var(--blanc);
+}
+
+/* Validación visual para fechas */
+.form-group input[type="datetime-local"].valid {
+  border-color: #10b981 !important;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.form-group input[type="datetime-local"].invalid {
+  border-color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.05);
+}

@@ -1,19 +1,38 @@
 import $ from 'jquery'; 
-
-
-// ==============================
-// FUNCIONES DE TEMAS CON jQuery
-// ==============================
-// $('<div class="witemas"></div>').appendTo('body');
+import { doc, setDoc, getDoc, serverTimestamp} from 'firebase/firestore';
 
 export const wiTema = (() => {
- const tms = [["Cielo","#0EBEFF"],["Dulce","#FF5C69"],["Paz","#29C72E"],["Mora","#7000FF"],["Futuro","#21273B"]], 
- set = el => {const [nm,co] = $(el).data('tema').split('|'); $('html').attr('data-theme',nm); 
- $('meta[name="theme-color"]').length ? $('meta[name="theme-color"]').attr('content',co) : $('<meta>',{name:'theme-color',content:co}).appendTo('head');
- savels('wiTema',`${nm}|${co}`,720); $('.mtha').removeClass('mtha'); $(el).addClass('mtha');},
- init = () => {$('.witemas').html(tms.map(([n,c]) => `<div class="tema" data-tema="${n}|${c}" style="background:${c}"></div>`).join('')); const sav = getls('wiTema'), ini = $(`[data-tema="${sav}"]`)[0] || $('.mtha')[0] || $('[data-tema]').first()[0]; ini && set(ini); $(document).off('click.witema').on('click.witema', '[data-tema]', e => set(e.currentTarget));};
- $('.witemas').length ? init() : new MutationObserver(m => m.some(({addedNodes}) => [...addedNodes].some(n => n.querySelector?.('.witemas'))) && (init(), true)).observe(document.body, {childList: true, subtree: true});
- return {set};
+  const tonos = [["Cielo","#0EBEFF"],["Dulce","#FF5C69"],["Paz","#29C72E"],["Mora","#7000FF"],["Futuro","#21273B"]];
+  let espera, temaSel;
+  const aplica = el => {
+    const dato = $(el).data('tema');
+    if (!dato) return false;
+    const [nomb, color] = dato.split('|');
+    if (!nomb || !color) return false;
+    $('html').attr('data-theme', nomb); const meta = $('meta[name="theme-color"]');
+    meta.length ? meta.attr('content', color) : $('<meta>', { name: 'theme-color', content: color }).appendTo('head');
+    savels('wiTema', dato, 720); $('.mtha').removeClass('mtha'); $(el).addClass('mtha'); temaSel = dato; return true;
+  };
+  const guarda = async (db, usr) => {
+    if (!db || !usr?.displayName || !temaSel) return;
+    try {
+      await setDoc(doc(db, 'preferencias', usr.displayName), {
+        usuario: usr.displayName, email: usr.email,
+        wiTema: temaSel, fechaActualizacion: serverTimestamp()
+      }, { merge: true });
+      const [nomb] = temaSel.split('|'); Mensaje(`Tema ${nomb} guardado 🎨`);
+    } catch (err) {console.error('❌ Error guardando tema:', err);}
+  };
+  return (db, usr) => {
+    $('.witemas').html(tonos.map(([nomb, color]) => `<div class="tema" data-tema="${nomb}|${color}" style="background:${color}"></div>`).join(''));
+    const guardado = getls('wiTema');
+    const inicio = $(`[data-tema="${guardado}"]`)[0] || $('.mtha')[0] || $('[data-tema]').first()[0];
+    inicio && aplica(inicio);
+    $(document).off('click.witema').on('click.witema', '[data-tema]', e => {
+      if (!aplica(e.currentTarget) || !db || !usr?.displayName) return; clearTimeout(espera);
+      espera = setTimeout(() => guarda(db, usr), 50); //Para guardar el tema segundos
+    });
+  };
 })();
 
 // ==============================
@@ -74,6 +93,11 @@ export const accederRol = (rol) => {
   const to = rol === 'smiletop' ? 'smiletop.html' : 'smile.html';
   window.location.href = new URL(to, window.location.href).toString();
 }; 
+
+export const nombrejunto = (texto) => {
+  return texto.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+};
+
 
 // RIGHT NOTIFICATIONS WITH X 
 export function Notificacion(mensaje, tipo = 'error', tiempo= 3000) {
@@ -572,3 +596,24 @@ export const fechaLetra = (fecha, formato) => {
   for (const [ms, unit] of unidades) { const cant = Math.floor(dif / ms); if (cant > 0) return new Date(fecha) < new Date() ? `Hace ${cant}${unit}` : `En ${cant}${unit}`; }
   return 'Ahora mismo';
 };
+
+export function wiUsuario(user = undefined, prop = undefined) {
+  if (user === undefined) {
+    // Solo obtener
+    const usuario = getls('usuarioAuth');
+    if (prop && usuario) {
+      return usuario[prop] || null;
+    }
+    return usuario;
+  } else if (user === null) {
+    // Limpiar
+    removels('usuarioAuth');
+  } else if (typeof user === 'string') {
+    // Si se pasa string como primer parámetro, es una propiedad
+    const usuario = getls('usuarioAuth');
+    return usuario?.[user] || null;
+  } else {
+    // Guardar usuario
+    savels('usuarioAuth', user);
+  }
+}
