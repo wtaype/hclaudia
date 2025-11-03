@@ -2,7 +2,7 @@ import $ from 'jquery';
 import { db } from '../firebase/init.js';
 import { getDocs, doc, updateDoc, deleteDoc, collection, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Notificacion, savels, getls, removels } from './widev.js';
-import { actualizarHabitaciones } from './habEstado.js'; 
+import { actuHabs } from './habEstado.js';
 
 // ========================================
 // 🏨 VARIABLES GLOBALES DE HABITACIONES
@@ -219,7 +219,7 @@ window.guardarCambiosHabitacion = async function(idHabitacion) {
         await cargarHabitaciones(correoUsuario);
         
         // ACTUALIZAR TARJETAS EN SMILE.JS
-        await actualizarHabitaciones();
+        await actuHabs();
         
         Notificacion('Habitación actualizada', 'success');
         

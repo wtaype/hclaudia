@@ -1,281 +1,231 @@
 import $ from 'jquery';
-import { db } from '../firebase/init.js';
-import { collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { Notificacion } from './widev.js';
-import { actualizarHabitaciones } from './habEstado.js';
+import { db, auth } from '../firebase/init.js';
+import { collection, doc, updateDoc, serverTimestamp, getDoc, setDoc, getDocs } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { Notificacion, getls, savels } from './widev.js';
+import { actuHabs } from './habEstado.js';
+import { actuHist } from './habHistorial.js';
 
-// ========================================
-// 🏨 VARIABLES GLOBALES DE REGISTRO
-// ========================================
-let usuarioActual = null;
+let usr = null, edit = false, idReg = null;
 
-// ========================================
-// 🎯 CONFIGURAR SISTEMA DE REGISTRO
-// ========================================
-export function configurarRegistroHabitaciones(usuario) {
-    usuarioActual = usuario;
-    configurarEventosFormulario();
-    configurarFechasAutomaticas();
-}
+const CAMPOS = {
+  nhabitacion:'nhabitacion', precio:'precio', estadoPago:'estadoPago', nombreCliente:'nombreCliente',
+  tipoDocumento:'tipoDocumento', numDocumento:'numDocumento', diasReservados:'diasReservados',
+  checkIn:'checkIn', checkOut:'checkOut', moneda:'moneda', metodoPago:'metodoPago',
+  desayuno:'desayuno', carroPlaca:'carroPlaca', celular:'celular', qPersonas:'qPersonas', comentario:'comentario'
+};
 
-// ========================================
-// 📝 CONFIGURAR EVENTOS DEL FORMULARIO
-// ========================================
-function configurarEventosFormulario() {
-    // EVENTO SUBMIT DEL FORMULARIO
-    $('#regForm').off('submit').on('submit', async function(evento) {
-        evento.preventDefault();
-        await procesarRegistroHabitacion();
-    });
+// 🔥 DETECTAR AUTH AUTOMÁTICAMENTE
+onAuthStateChanged(auth, u => { if (u) usr = u; });
 
-    // AUTO-CALCULAR FECHAS AL CAMBIAR NOCHES
-    $('#diasReservados').on('input', calcularFechas);
-    $('#checkIn').on('change', calcularFechas);
+export function configReg(user) { usr = user; initForm(); confFechas(); cargarHabs(); }
 
-    // VALIDACIONES EN TIEMPO REAL
-    $('#numDocumento').on('input', validarDocumento);
-    $('#precio').on('input', validarPrecio);
-    $('#checkIn, #checkOut').on('change', validarFechas);
-}
+const initForm = () => {
+  $('#regForm').off('submit').on('submit', async e => { e.preventDefault(); await guardar(); });
+  $('#diasReservados, #checkIn').on('input change', calcFechas);
+  $('#numDocumento').on('input', validDoc);
+  $('#precio').on('input', validPrecio);
+};
 
-// ========================================
-// 📅 CONFIGURAR FECHAS AUTOMÁTICAS
-// ========================================
-function configurarFechasAutomaticas() {
-    const fechaHoy = new Date();
-    const checkInDefecto = new Date(fechaHoy.getFullYear(), fechaHoy.getMonth(), fechaHoy.getDate(), 14, 0);
-    const checkOutDefecto = new Date(fechaHoy.getFullYear(), fechaHoy.getMonth(), fechaHoy.getDate() + 1, 12, 0);
-    
-    // ESTABLECER FECHAS POR DEFECTO CON HORAS HOTEL
-    if (!$('#checkIn').val()) {
-        $('#checkIn').val(checkInDefecto.toISOString().slice(0, 16));
+const confFechas = () => {
+  const ahora = new Date(), opts = { timeZone: 'America/Lima' };
+  const año = ahora.toLocaleString('en-US', { ...opts, year: 'numeric' });
+  const mes = ahora.toLocaleString('en-US', { ...opts, month: '2-digit' });
+  const dia = ahora.toLocaleString('en-US', { ...opts, day: '2-digit' });
+  const hora = ahora.toLocaleString('en-US', { ...opts, hour: '2-digit', hour12: false });
+  const min = ahora.toLocaleString('en-US', { ...opts, minute: '2-digit' });
+  
+  if (!$('#checkIn').val()) $('#checkIn').val(`${año}-${mes}-${dia}T${hora}:${min}`);
+  
+  if (!$('#checkOut').val()) {
+    const mañana = new Date(ahora.getTime() + 86400000);
+    const añoM = mañana.toLocaleString('en-US', { ...opts, year: 'numeric' });
+    const mesM = mañana.toLocaleString('en-US', { ...opts, month: '2-digit' });
+    const diaM = mañana.toLocaleString('en-US', { ...opts, day: '2-digit' });
+    $('#checkOut').val(`${añoM}-${mesM}-${diaM}T${hora}:${min}`);
+  }
+};
+
+async function cargarHabs() {
+  try {
+    let habs = getls('habsPanel');
+    if (!habs) {
+      const cons = await getDocs(collection(db, 'habitaciones'));
+      habs = cons.docs.map(d => ({ id: d.id, ...d.data() }));
+      savels('habsPanel', habs, 300);
     }
-    
-    if (!$('#checkOut').val()) {
-        $('#checkOut').val(checkOutDefecto.toISOString().slice(0, 16));
-    }
+    llenarSelect(habs);
+  } catch (e) { console.error('Error cargar habs:', e); }
 }
 
-// ========================================
-// 🧮 CALCULAR FECHAS AUTOMÁTICAMENTE
-// ========================================
-function calcularFechas() {
-    const checkInValor = $('#checkIn').val();
-    const diasReservados = parseInt($('#diasReservados').val()) || 1;
-    
-    if (checkInValor) {
-        const fechaCheckIn = new Date(checkInValor);
-        const fechaCheckOut = new Date(fechaCheckIn);
-        fechaCheckOut.setDate(fechaCheckOut.getDate() + diasReservados);
-        fechaCheckOut.setHours(12, 0); // Check-out a las 12:00
-        
-        $('#checkOut').val(fechaCheckOut.toISOString().slice(0, 16));
-    }
-}
+const llenarSelect = (habs) => {
+  const sel = $('#nhabitacion');
+  if (!sel.length) return;
+  sel.html('<option value="">Selecciona...</option>' + 
+    habs.map(h => `<option value="${h.numero}">Hab ${h.numero} - ${h.tipo || 'Std'} ${h.estado !== 'libre' ? `(${h.estado})` : ''}</option>`).join(''));
+};
 
-// ========================================
-// ✅ VALIDACIONES EN TIEMPO REAL
-// ========================================
-function validarDocumento() {
-    const tipoDoc = $('#tipoDocumento').val();
-    const numeroDoc = $('#numDocumento').val();
-    
-    if (tipoDoc === 'DNI' && numeroDoc.length === 8) {
-        $('#numDocumento').css('border-color', '#10b981');
-    } else if (tipoDoc === 'Pasaporte' && numeroDoc.length >= 6) {
-        $('#numDocumento').css('border-color', '#10b981');
+const calcFechas = () => {
+  const entrada = $('#checkIn').val(), noches = parseInt($('#diasReservados').val()) || 1;
+  if (entrada) {
+    const fEnt = new Date(entrada), fSal = new Date(fEnt);
+    fSal.setDate(fSal.getDate() + noches);
+    $('#checkOut').val(fSal.toISOString().slice(0, 16));
+  }
+};
+
+const validDoc = () => {
+  const tipo = $('#tipoDocumento').val(), num = $('#numDocumento').val();
+  const valido = (tipo === 'DNI' && num.length === 8) || (tipo !== 'DNI' && num.length >= 6);
+  $('#numDocumento').css('border-color', valido ? 'var(--exito)' : 'var(--error)');
+};
+
+const validPrecio = () => {
+  const precio = parseFloat($('#precio').val());
+  $('#precio').css('border-color', precio > 0 && precio <= 2000 ? 'var(--exito)' : 'var(--error)');
+};
+
+async function guardar() {
+  try {
+    const btn = $('.btn-save');
+    btn.html('<i class="fa-solid fa-spinner fa-spin"></i> Guardando...').prop('disabled', true);
+
+    const datos = obtDatos();
+    if (!validar(datos)) return btn.html('<i class="fa-solid fa-check-circle"></i> Guardar').prop('disabled', false);
+
+    // 🔥 DATOS DEL USUARIO
+    const usuario = usr.displayName; 
+    const email = usr.email;          
+
+    if (edit) {
+      await updateDoc(doc(db, 'hotelventas', idReg), { 
+        ...datos, 
+        actualizadoPor: usuario, // 🔥 displayName
+        fechaActualizado: serverTimestamp() 
+      });
+      Notificacion('✅ Actualizado', 'success');
     } else {
-        $('#numDocumento').css('border-color', '#ef4444');
+      const ventaId = `venta_${Date.now()}`;
+      
+      await setDoc(doc(db, 'hotelventas', ventaId), {
+        ...datos,
+        fechaRegistro: serverTimestamp(),
+        vendedor: usuario,        // 🔥 displayName (igual que retodelmes)
+        email: email,             // 🔥 email completo
+        registradoPor: usuario,   // 🔥 displayName
+        actualizadoPor: usuario,  // 🔥 displayName
+        estado: 'activo'
+      });
+
+      await updateDoc(doc(db, 'habitaciones', datos.nhabitacion), {
+        estado: 'ocupado',
+        cliente: datos.nombreCliente,
+        checkIn: new Date(datos.checkIn),
+        checkOut: new Date(datos.checkOut),
+        registroId: ventaId,
+        actualizadoPor: usuario, // 🔥 displayName
+        fechaActualizado: serverTimestamp()
+      });
+
+      Notificacion(`✅ Check-in Hab ${datos.nhabitacion}`, 'success');
     }
+
+    limpiar();
+    await actuHabs();
+    await actuHist();
+
+  } catch (e) {
+    console.error('Error:', e);
+    Notificacion('❌ Error al guardar', 'error');
+  } finally {
+    $('.btn-save').html('<i class="fa-solid fa-check-circle"></i> Guardar').prop('disabled', false);
+  }
 }
 
-function validarPrecio() {
-    const precio = parseFloat($('#precio').val());
-    
-    if (precio > 0 && precio <= 1000) {
-        $('#precio').css('border-color', '#10b981');
-    } else {
-        $('#precio').css('border-color', '#ef4444');
+const obtDatos = () => {
+  const datos = {};
+  Object.keys(CAMPOS).forEach(c => {
+    const v = $(`#${c}`).val();
+    datos[c] = (c === 'precio' ? parseFloat(v) : c === 'diasReservados' ? parseInt(v) : 
+                ['carroPlaca','celular','comentario'].includes(c) && !v ? null : 
+                typeof v === 'string' ? v.trim() : v);
+  });
+  return datos;
+};
+
+const validar = (d) => {
+  const vals = [
+    { campo: d.nhabitacion, mensaje: 'Selecciona habitación', focus: '#nhabitacion' },
+    { campo: d.precio > 0, mensaje: 'Precio inválido', focus: '#precio' },
+    { campo: d.nombreCliente, mensaje: 'Ingresa cliente', focus: '#nombreCliente' },
+    { campo: d.numDocumento, mensaje: 'Ingresa documento', focus: '#numDocumento' },
+    { campo: d.checkIn, mensaje: 'Selecciona entrada', focus: '#checkIn' },
+    { campo: d.checkOut, mensaje: 'Selecciona salida', focus: '#checkOut' },
+    { campo: new Date(d.checkOut) > new Date(d.checkIn), mensaje: 'Salida debe ser después', focus: '#checkOut' }
+  ];
+
+  for (const v of vals) {
+    if (!v.campo) {
+      Notificacion(v.mensaje, 'error');
+      $(v.focus).focus();
+      return false;
     }
-}
+  }
+  return true;
+};
 
-function validarFechas() {
-    const checkIn = new Date($('#checkIn').val());
-    const checkOut = new Date($('#checkOut').val());
-    
-    if (checkOut > checkIn) {
-        $('#checkIn, #checkOut').css('border-color', '#10b981');
-    } else {
-        $('#checkOut').css('border-color', '#ef4444');
+const limpiar = () => {
+  $('#regForm')[0].reset();
+  $('#estadoPago').val('pagado'); $('#diasReservados').val('1');
+  $('#moneda').val('Soles'); $('#desayuno').val('si');
+  $('#regForm input, #regForm select').prop('disabled', false).css({'pointer-events':'auto','opacity':'1'});
+  confFechas(); edit = false; idReg = null;
+  $('.btn-save').html('<i class="fa-solid fa-check-circle"></i> Guardar').show();
+};
+
+export const iniciarCheckIn = (num) => {
+  limpiar();
+  $('#nhabitacion').val(num);
+  confFechas();
+  $('#precio').focus();
+  Notificacion(`Check-in Hab ${num}`, 'info');
+};
+
+export const verReg = async (id) => {
+  try {
+    await cargarHabs();
+    const docSnap = await getDoc(doc(db, 'hotelventas', id)); // ✅ VARIABLE RENOMBRADA
+    if (!docSnap.exists()) return Notificacion('No encontrado', 'error');
+    llenarForm(docSnap.data());
+    $('#regForm input, #regForm select').prop('disabled', true);
+    $('.btn-save').hide();
+    Notificacion('Modo lectura', 'info');
+  } catch (e) { console.error(e); Notificacion('Error', 'error'); }
+};
+
+export const editReg = async (id) => {
+  try {
+    await cargarHabs();
+    const docSnap = await getDoc(doc(db, 'hotelventas', id)); // ✅ VARIABLE RENOMBRADA
+    if (!docSnap.exists()) return Notificacion('No encontrado', 'error');
+    llenarForm(docSnap.data());
+    edit = true; idReg = id;
+    $('#regForm input, #regForm select').prop('disabled', false).css({'pointer-events':'auto','opacity':'1'});
+    $('.btn-save').html('<i class="fa-solid fa-edit"></i> Actualizar').show();
+    Notificacion('Modo edición', 'info');
+  } catch (e) { console.error(e); Notificacion('Error', 'error'); }
+};
+
+const llenarForm = (d) => {
+  Object.keys(CAMPOS).forEach(c => {
+    const el = $(`#${c}`);
+    if (el.length && d[c] !== undefined) {
+      if (c === 'checkIn' || c === 'checkOut') {
+        const f = d[c].toDate ? d[c].toDate() : new Date(d[c]);
+        el.val(f.toISOString().slice(0, 16));
+      } else {
+        el.val(d[c]);
+      }
     }
-}
-
-// ========================================
-// 💾 PROCESAR REGISTRO DE HABITACIÓN
-// ========================================
-async function procesarRegistroHabitacion() {
-    try {
-        // MOSTRAR LOADING
-        $('.btn-save').html('<i class="fa-solid fa-spinner fa-spin"></i> Guardando...');
-        $('.btn-save').prop('disabled', true);
-
-        // RECOPILAR DATOS DEL FORMULARIO
-        const datosRegistro = recopilarDatosFormulario();
-        
-        // VALIDAR DATOS
-        if (!validarDatosCompletos(datosRegistro)) {
-            return;
-        }
-
-        // GUARDAR EN FIREBASE - COLECCIÓN REGISTROS
-        const docRegistro = await addDoc(collection(db, 'registros'), {
-            ...datosRegistro,
-            fechaRegistro: serverTimestamp(),
-            registradoPor: usuarioActual.email,
-            estado: 'activo'
-        });
-
-        // ACTUALIZAR HABITACIÓN - MARCAR COMO OCUPADA
-        await updateDoc(doc(db, 'habitaciones', datosRegistro.numeroHabitacion), {
-            estado: 'ocupado',
-            cliente: datosRegistro.nombreCliente,
-            checkIn: new Date(datosRegistro.checkIn),
-            checkOut: new Date(datosRegistro.checkOut),
-            actualizadoPor: usuarioActual.email,
-            fechaActualizado: serverTimestamp()
-        });
-
-        // LIMPIAR FORMULARIO
-        limpiarFormulario();
-        
-        // ACTUALIZAR PANEL DE HABITACIONES
-        await actualizarHabitaciones();
-        
-        Notificacion(`✅ Check-in completado - Habitación ${datosRegistro.numeroHabitacion}`, 'success');
-
-    } catch (error) {
-        console.error('Error registro:', error);
-        Notificacion('Error al guardar registro', 'error');
-    } finally {
-        // RESTAURAR BOTÓN
-        $('.btn-save').html('<i class="fa-solid fa-check-circle"></i> Guardar');
-        $('.btn-save').prop('disabled', false);
-    }
-}
-
-// ========================================
-// 📋 RECOPILAR DATOS DEL FORMULARIO
-// ========================================
-function recopilarDatosFormulario() {
-    return {
-        numeroHabitacion: $('#nhabitacion').val(),
-        precio: parseFloat($('#precio').val()),
-        estadoPago: $('#estadoPago').val(),
-        nombreCliente: $('#nombreCliente').val().trim(),
-        tipoDocumento: $('#tipoDocumento').val(),
-        numDocumento: $('#numDocumento').val().trim(),
-        diasReservados: parseInt($('#diasReservados').val()),
-        checkIn: $('#checkIn').val(),
-        checkOut: $('#checkOut').val(),
-        moneda: $('#moneda').val(),
-        metodoPago: $('#metodoPago').val(),
-        desayuno: $('#desayuno').val(),
-        carroPlaca: $('#carroPlaca').val().trim() || null,
-        celular: $('#celular').val().trim() || null,
-        qPersonas: $('#qPersonas').val().trim(),
-        comentario: $('#comentario').val().trim() || null
-    };
-}
-
-// ========================================
-// ✅ VALIDAR DATOS COMPLETOS
-// ========================================
-function validarDatosCompletos(datos) {
-    // VALIDACIONES REQUERIDAS
-    if (!datos.numeroHabitacion) {
-        Notificacion('Selecciona una habitación', 'error');
-        $('#nhabitacion').focus();
-        return false;
-    }
-
-    if (!datos.precio || datos.precio <= 0) {
-        Notificacion('Ingresa un precio válido', 'error');
-        $('#precio').focus();
-        return false;
-    }
-
-    if (!datos.nombreCliente) {
-        Notificacion('Ingresa el nombre del cliente', 'error');
-        $('#nombreCliente').focus();
-        return false;
-    }
-
-    if (!datos.numDocumento) {
-        Notificacion('Ingresa el número de documento', 'error');
-        $('#numDocumento').focus();
-        return false;
-    }
-
-    if (!datos.checkIn) {
-        Notificacion('Selecciona fecha y hora de check-in', 'error');
-        $('#checkIn').focus();
-        return false;
-    }
-
-    if (!datos.checkOut) {
-        Notificacion('Selecciona fecha y hora de check-out', 'error');
-        $('#checkOut').focus();
-        return false;
-    }
-
-    // VALIDAR QUE CHECKOUT SEA POSTERIOR AL CHECKIN
-    if (new Date(datos.checkOut) <= new Date(datos.checkIn)) {
-        Notificacion('El check-out debe ser posterior al check-in', 'error');
-        $('#checkOut').focus();
-        return false;
-    }
-
-    return true;
-}
-
-// ========================================
-// 🧹 LIMPIAR FORMULARIO
-// ========================================
-function limpiarFormulario() {
-    $('#regForm')[0].reset();
-    
-    // RESTAURAR VALORES POR DEFECTO
-    $('#estadoPago').val('pagado');
-    $('#tipoDocumento').val('DNI');
-    $('#diasReservados').val('1');
-    $('#moneda').val('Soles');
-    $('#metodoPago').val('Tarjeta');
-    $('#desayuno').val('si');
-    
-    // CONFIGURAR FECHAS AUTOMÁTICAS
-    configurarFechasAutomaticas();
-    
-    // ENFOCAR PRIMER CAMPO
-    $('#nhabitacion').focus();
-}
-
-// ========================================
-// 🎯 FUNCIÓN PARA CHECK-IN RÁPIDO
-// ========================================
-export function iniciarCheckInRapido(numeroHabitacion) {
-    // PRELLENAR HABITACIÓN
-    $('#nhabitacion').val(numeroHabitacion);
-    
-    // CONFIGURAR FECHAS CON HORA ACTUAL
-    const ahora = new Date();
-    const checkInAhora = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), ahora.getHours(), ahora.getMinutes());
-    const checkOutManana = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 12, 0);
-    
-    $('#checkIn').val(checkInAhora.toISOString().slice(0, 16));
-    $('#checkOut').val(checkOutManana.toISOString().slice(0, 16));
-    
-    // ENFOCAR PRECIO
-    $('#precio').focus();
-    
-    Notificacion(`Check-in iniciado para habitación ${numeroHabitacion}`, 'info');
-}
+  });
+};

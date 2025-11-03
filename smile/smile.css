@@ -300,6 +300,11 @@ body {
   transform: translateY(-0.2vh);
 }
 
+.user-info img {
+    max-width: 100%;
+    height: 25px;
+}
+
 /* Botón Cerrar Sesión */
 .btn-logout {
   display: flex; 
@@ -412,8 +417,8 @@ body {
   color: var(--txa); 
 }
 
-.panel-body { 
-  padding: 2vh 2vw; 
+.form-panel .panel-body {
+  padding: 2vh 2vw;
 }
 
 /* Grid del Formulario - 3 Columnas */
@@ -1024,25 +1029,35 @@ img#usrImg {
 }
 
 
-
-
-.rooms-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
+#roomsGrid{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5vh;
+  padding: 1.5vh 1.5vh 1vh 1.5vh;
 }
 
+#roomsGrid>* {
+    flex: 33%;
+    border: .1vh solid var(--mco);
+    border-radius: 1vh;
+    padding: 1vh;
+}
+
+#roomsGrid button {
+    border: none;
+    padding: 1vh .5vh;
+    word-wrap: break-word;
+}
+
+/* ========== ESTADOS DE HABITACIONES ========== */
 .room-card {
-  background: var(--bg1);
-  backdrop-filter: blur(20px);
-  border: 3px solid var(--bdr);
-  border-radius: 15px;
-  padding: 0;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  overflow: hidden;
+  background: var(--wb);
+  border: .2vh solid var(--bdr);
+  border-radius: 1.2vh;
+  padding: 1.5vh;
+  transition: all var(--trans_m);
   position: relative;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  overflow: hidden;
 }
 
 .room-card::before {
@@ -1051,187 +1066,415 @@ img#usrImg {
   top: 0;
   left: 0;
   width: 100%;
-  height: 4px;
-  background: var(--room-color);
+  height: .4vh;
+  transition: all var(--trans_m);
+}
+
+/* Estados con colores del root */
+.room-card.libre::before {
+  background: var(--exito);
 }
 
 .room-card.libre {
-  --room-color: #10b981;
-  --room-bg: rgba(16, 185, 129, 0.1);
+  border-color: var(--exito);
+  box-shadow: 0 .2vh .8vh rgba(16, 185, 129, 0.1);
+}
+
+.room-card.ocupado::before {
+  background: var(--error);
 }
 
 .room-card.ocupado {
-  --room-color: #ef4444;
-  --room-bg: rgba(239, 68, 68, 0.1);
+  border-color: var(--error);
+  box-shadow: 0 .2vh .8vh rgba(239, 68, 68, 0.1);
+}
+
+.room-card.limpieza::before {
+  background: var(--info);
 }
 
 .room-card.limpieza {
-  --room-color: #06b6d4;
-  --room-bg: rgba(6, 182, 212, 0.1);
+  border-color: var(--info);
+  box-shadow: 0 .2vh .8vh rgba(59, 130, 246, 0.1);
+}
+
+.room-card.fuera::before {
+  background: var(--alert);
 }
 
 .room-card.fuera {
-  --room-color: #f59e0b;
-  --room-bg: rgba(245, 158, 11, 0.1);
+  border-color: var(--alert);
+  box-shadow: 0 .2vh .8vh rgba(245, 158, 11, 0.1);
 }
 
 .room-card:hover {
-  transform: translateY(-5px) scale(1.03);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-  border-color: var(--room-color);
+  transform: translateY(-.3vh);
+  box-shadow: 0 1vh 2.5vh var(--bdr);
 }
 
-.room-card:hover .status-select-container {
-  opacity: 1;
-  pointer-events: all;
-}
-
-.room-card .room-header {
+/* ========== HEADER HABITACIÓN ========== */
+.room-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.8rem;
-  padding: 1.2rem 1.2rem 0;
+  margin-bottom: 1vh;
+  padding-bottom: 1vh;
+  border-bottom: .1vh solid var(--bdr);
 }
 
-.room-card .room-number {
-  font-size: 2rem;
+.room-numero {
+  font-size: var(--fz_xl);
   font-weight: 900;
-  color: var(--room-color);
+  color: var(--bg2);
+  font-family: var(--ff_rub);
 }
 
-.room-card .status-badge {
-  padding: 0.3rem 0.7rem;
-  background: var(--room-color);
-  color: white;
-  border-radius: 15px;
-  font-size: 0.7rem;
-  font-weight: 700;
+.room-tipo {
+  font-size: var(--fz_s);
+  font-weight: 600;
+  color: var(--bg4);
+  padding: .3vh .8vh;
+  border-radius: .5vh;
+}
+.user-cell {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  text-transform: uppercase;
+  gap: 8px;
 }
 
-.room-card .room-info {
-  font-size: 0.85rem;
-  color: var(--tx);
-  opacity: 0.9;
-  padding: 0 1.2rem 1.2rem;
-  line-height: 1.6;
+.avatar-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary);
 }
 
-.room-card .room-info strong {
-  font-weight: 700;
+.fa-spin {
+  animation: fa-spin 1s infinite linear;
 }
 
-/* SELECT DE ESTADOS */
-.status-select-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90%;
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.3s ease;
-  z-index: 10;
+@keyframes fa-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.status-select {
-  width: 100%;
-  padding: 0.8rem 2.5rem 0.8rem 1rem;
-  background: var(--wb);
-  backdrop-filter: blur(20px);
-  border: 3px solid var(--room-color);
-  border-radius: 12px;
-  color: var(--tx);
-  font-family: var(--ff_pop);
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: var(--trans_r);
-  outline: none;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23000' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-  text-align: center;
+/* Punto indicador de estado */
+.room-estado-dot {
+  width: 1.2vh;
+  height: 1.2vh;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
 }
 
-.status-select:hover {
-  transform: scale(1.05);
-  box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+.room-card.libre .room-estado-dot {
+  background: var(--exito);
+  box-shadow: 0 0 .5vh var(--exito);
 }
 
-.status-select:focus {
-  border-width: 4px;
-  transform: scale(1.08);
+.room-card.ocupado .room-estado-dot {
+  background: var(--error);
+  box-shadow: 0 0 .5vh var(--error);
 }
 
-.status-select option {
-  padding: 1rem;
-  background: var(--wb);
-  color: var(--tx);
+.room-card.limpieza .room-estado-dot {
+  background: var(--info);
+  box-shadow: 0 0 .5vh var(--info);
+}
+
+.room-card.fuera .room-estado-dot {
+  background: var(--alert);
+  box-shadow: 0 0 .5vh var(--alert);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ========== BODY HABITACIÓN ========== */
+.room-body {
+  margin-bottom: 1.5vh;
+}
+
+.room-cliente {
   font-weight: 600;
-}
-
-.status-select-container::before {
-  content: '⚡ Cambiar Estado';
-  position: absolute;
-  top: -2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--room-color);
-  color: white;
-  padding: 0.4rem 1rem;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: 700;
+  color: var(--tx);
+  margin-bottom: .5vh;
+  font-size: var(--fz_m);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-  animation: bounceLabel 0.6s ease;
 }
 
-@keyframes bounceLabel {
-  0%, 100% { transform: translateX(-50%) translateY(0); }
-  50% { transform: translateX(-50%) translateY(-5px); }
+.room-check {
+  font-size: var(--fz_s);
+  color: var(--bg4);
 }
 
-@media (max-width: 768px) {
-  .rooms-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  }
+/* ========== ACCIONES HABITACIÓN ========== */
+.room-actions {
+  display: flex;
+  gap: .5vh;
+  flex-wrap: wrap;
 }
 
-/* Estilos específicos para datetime-local */
-.form-group input[type="datetime-local"] {
-  padding: 1.3vh 1vw;
-  border: 0.25vh solid var(--bdr);
-  border-radius: 1vh;
-  background: rgba(255, 255, 255, 0.9);
-  font-family: var(--ff_pop);
-  font-weight: 500;
-  color: var(--txe);
+.btn-action {
+  flex: 1;
+  min-width: 3.5vh;
+  padding: .8vh;
+  border: none;
+  border-radius: .8vh;
+  cursor: pointer;
   transition: all var(--trans_m);
-  font-size: clamp(0.8rem, 0.95vw, 0.9rem);
+  font-size: var(--fz_m);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.form-group input[type="datetime-local"]:focus {
-  border-color: var(--mco);
-  box-shadow: 0 0 0 0.3vh var(--bg1);
-  transform: translateY(-0.1vh);
+.btn-view {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--exito);
+}
+
+.btn-view:hover {
+  background: var(--exito);
+  color: var(--blanc);
+  transform: scale(1.05);
+}
+
+.btn-edit {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--info);
+}
+
+.btn-edit:hover {
+  background: var(--info);
+  color: var(--blanc);
+  transform: scale(1.05);
+}
+
+.btn-checkin {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--exito);
+}
+
+.btn-checkin:hover {
+  background: var(--exito);
+  color: var(--blanc);
+  transform: scale(1.05);
+}
+
+.btn-checkout {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--error);
+}
+
+.btn-checkout:hover {
+  background: var(--error);
+  color: var(--blanc);
+  transform: scale(1.05);
+}
+
+.btn-cleaning {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--info);
+}
+
+.btn-cleaning:hover,
+.btn-cleaning.active {
+  background: var(--info);
+  color: var(--blanc);
+  transform: scale(1.05);
+}
+
+.btn-delete {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--error);
+}
+
+.btn-delete:hover {
+  background: var(--error);
+  color: var(--blanc);
+  transform: scale(1.05);
+}
+
+/* ========== GRID DE HABITACIONES ========== */
+#roomsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5vh;
+  padding: 1vh;
+}
+
+/* ========== FORMULARIO OPTIMIZADO ========== */
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--bg2);
+  box-shadow: 0 0 0 .3vh var(--bg1);
+  transform: translateY(-.1vh);
   background: var(--blanc);
 }
 
-/* Validación visual para fechas */
-.form-group input[type="datetime-local"].valid {
-  border-color: #10b981 !important;
-  background: rgba(16, 185, 129, 0.05);
+.btn-save {
+  width: 100%;
+  background: linear-gradient(135deg, var(--bdr), var(--mco));
+  color: var(--txa);
+  border: none;
+  padding: 1.5vh 0;
+  border-radius: 1.2vh;
+  font-weight: 700;
+  font-size: var(--fz_l);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1vh;
+  transition: all var(--trans_m);
 }
 
-.form-group input[type="datetime-local"].invalid {
-  border-color: #ef4444 !important;
-  background: rgba(239, 68, 68, 0.05);
+.btn-save:hover:not(:disabled) {
+  transform: translateY(-.3vh);
+  box-shadow: 0 .8vh 2vh var(--bdr);
+}
+
+.btn-save:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ========== TABLA HISTORIAL ========== */
+.registros-table tbody tr {
+  border-bottom: .1vh solid var(--bg);
+  transition: all var(--trans_r);
+}
+
+.registros-table tbody tr:hover {
+  background: var(--bg);
+  transform: scale(1.01);
+}
+
+.action-buttons {
+  display: flex;
+  gap: .5vh;
+  justify-content: center;
+}
+
+/* ========== PAGINACIÓN ========== */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: .8vh;
+  align-items: center;
+  margin-top: 2vh;
+}
+
+.page-btn {
+  padding: .8vh 1.2vw;
+  border: .15vh solid var(--bdr);
+  background: var(--blanc);
+  color: var(--tx);
+  border-radius: .8vh;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all var(--trans_m);
+  min-width: 3.5vh;
+}
+
+.page-btn:hover {
+  background: var(--bg);
+  border-color: var(--mco);
+  transform: scale(1.05);
+}
+
+.page-btn.active {
+  background: var(--mco);
+  color: var(--txa);
+  border-color: var(--mco);
+}
+
+/* ========== CARDS INFO ========== */
+.info-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2vh;
+  margin-bottom: 2vh;
+}
+
+.info-card {
+  background: var(--wb);
+  border-radius: 1.5vh;
+  box-shadow: 0 .5vh 2vh var(--bdr);
+  padding: 2vh 1.5vw;
+  display: flex;
+  align-items: center;
+  gap: 1.5vh;
+  transition: all var(--trans_m);
+}
+
+.info-card:hover {
+  transform: translateY(-.5vh);
+  box-shadow: 0 1vh 2.5vh var(--bdr);
+}
+
+.card-icon {
+  width: 6vh;
+  height: 6vh;
+  border-radius: 1.2vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fz_xl);
+}
+
+.card-value {
+  font-size: var(--fz_xl);
+  font-weight: 800;
+  color: var(--bg2);
+  font-family: var(--ff_rub);
+}
+
+.card-label {
+  font-size: var(--fz_s);
+  font-weight: 600;
+  color: var(--bg4);
+  text-transform: uppercase;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 1200px) {
+  #roomsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .info-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  #roomsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .info-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .room-actions {
+    flex-direction: column;
+  }
+  
+  .btn-action {
+    width: 100%;
+  }
+}
+#regForm input:disabled, #regForm select:disabled {
+    background: var(--bg);
+}
+
+.foo_fresh i {
+    padding: .7vh 2vh;
+    cursor: pointer;
 }

@@ -35,6 +35,29 @@ export const wiTema = (() => {
   };
 })();
 
+// 🇵🇪 OBTENER FECHA/HORA ACTUAL DE PERÚ
+export const fechaPeru = (tipo = 'full') => {
+  const ahora = new Date();
+  const opciones = { timeZone: 'America/Lima' };
+  
+  if (tipo === 'input') {
+    // Para inputs datetime-local: 2025-11-02T23:26
+    const año = ahora.toLocaleString('en-US', { ...opciones, year: 'numeric' });
+    const mes = ahora.toLocaleString('en-US', { ...opciones, month: '2-digit' });
+    const dia = ahora.toLocaleString('en-US', { ...opciones, day: '2-digit' });
+    const hora = ahora.toLocaleString('en-US', { ...opciones, hour: '2-digit', hour12: false });
+    const min = ahora.toLocaleString('en-US', { ...opciones, minute: '2-digit' });
+    return `${año}-${mes}-${dia}T${hora}:${min}`;
+  }
+  
+  // Para mostrar: 02/11/2025 11:26 pm
+  const dia = ahora.toLocaleString('es-PE', { ...opciones, day: '2-digit' });
+  const mes = ahora.toLocaleString('es-PE', { ...opciones, month: '2-digit' });
+  const año = ahora.toLocaleString('es-PE', { ...opciones, year: 'numeric' });
+  const hora = ahora.toLocaleString('es-PE', { ...opciones, hour: '2-digit', minute: '2-digit', hour12: true });
+  return `${dia}/${mes}/${año} ${hora}`;
+};
+
 // ==============================
 // SISTEMA DE ACTUALIZACION DE CLASES
 // ==============================
@@ -83,6 +106,19 @@ export const Saludar = () => {
         return "Buenas noches, ";
     }
 }; 
+
+
+
+export const fechaCheck = (stamp, fmt = 'fecha') => {
+  if (!stamp) return '';
+  try {
+    const d = stamp.toDate ? stamp.toDate() : new Date(stamp);
+    if (isNaN(d.getTime())) return ''; // 🔥 Validación clave!
+    return fmt === 'hora' ? d.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit', hour12:false}) :
+           fmt === 'full' ? `${d.toLocaleDateString('es-PE')} ${d.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit', hour12:false})}` :
+           d.toLocaleDateString('es-PE');
+  } catch { return ''; }
+};
 
 // AccederRol
 // export const accederRol = (rol) => {
