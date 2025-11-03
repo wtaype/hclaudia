@@ -16,15 +16,15 @@
   --ff_rub: 'Rubik', 'Segoe UI', system-ui;
   
   /* Colores Base Universales */
-  --blanc: #fff; 
-  --negr: #000; 
-  --gris: #ddd; 
-  --gris2: #374151;
-  --exito: #3cd741; 
+  --F: #fff; 
+  --0: #000; 
+  --D: #ddd; 
+  --D2: #374151;
+  --success: #3cd741; 
   --error: #ff3849; 
   --alert: #ffa726;
-  --infor: #00a8e6; 
-  --oro: #fbbf24; 
+  --info: #00a8e6; 
+  --warning: #fbbf24; 
   --oro2: #b45309;
   
   /* TEMA DULCE (Rosa/Rojo) - DEFAULT */
@@ -49,7 +49,7 @@
   --bg6: #b30024;       /* Rojo muy oscuro */
   
   /* Sombras y Transiciones */
-  --somb_m: 0 0 0.3vh 0.1vh var(--blanc);
+  --somb_m: 0 0 0.3vh 0.1vh var(--F);
   --somb_l: 0 0.4vh 0.8vh rgba(0,0,0,0.15);
   --trans_l: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   --trans_m: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -459,7 +459,7 @@ body {
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 1.3vh 1vw;
+  padding: 1.6vh 1vw;
   border: 0.25vh solid var(--bdr);
   border-radius: 1vh;
   outline: none;
@@ -478,7 +478,7 @@ body {
   border-color: var(--mco);
   box-shadow: 0 0 0 0.3vh var(--bg1);
   transform: translateY(-0.1vh);
-  background: var(--blanc);
+  background: var(--F);
 }
 
 .form-group textarea {
@@ -733,7 +733,7 @@ body {
   padding: 0.8vh 1.2vw;
   border: 0.2vh solid var(--bdr);
   border-radius: 0.8vh;
-  background: var(--blanc);
+  background: var(--F);
   color: var(--txe);
   font-size: clamp(0.8rem, 0.95vw, 0.9rem);
   font-weight: 500;
@@ -836,11 +836,11 @@ body {
 /* Botón Ver (Verde) */
 .btn-view {
   background: rgba(34, 197, 94, 0.1);
-  color: var(--exito);
+  color: var(--success);
 }
 
 .btn-view:hover {
-  background: var(--exito);
+  background: var(--success);
   color: white;
   transform: scale(1.05);
 }
@@ -882,7 +882,7 @@ body {
 .page-btn {
   padding: 0.8vh 1.2vw;
   border: 0.15vh solid var(--bdr);
-  background: var(--blanc);
+  background: var(--F);
   color: var(--tx);
   border-radius: 0.6vh;
   cursor: pointer;
@@ -915,7 +915,7 @@ body {
   position: fixed;
   top: 10vh;
   right: 2vw;
-  background: linear-gradient(135deg, var(--exito), #16a34a);
+  background: linear-gradient(135deg, var(--success), #16a34a);
   color: white;
   padding: 1.5vh 2vw;
   border-radius: 1vh;
@@ -1038,7 +1038,6 @@ img#usrImg {
 
 #roomsGrid>* {
     flex: 33%;
-    border: .1vh solid var(--mco);
     border-radius: 1vh;
     padding: 1vh;
 }
@@ -1072,11 +1071,11 @@ img#usrImg {
 
 /* Estados con colores del root */
 .room-card.libre::before {
-  background: var(--exito);
+  background: var(--success);
 }
 
 .room-card.libre {
-  border-color: var(--exito);
+  border-color: var(--success);
   box-shadow: 0 .2vh .8vh rgba(16, 185, 129, 0.1);
 }
 
@@ -1120,6 +1119,11 @@ img#usrImg {
   margin-bottom: 1vh;
   padding-bottom: 1vh;
   border-bottom: .1vh solid var(--bdr);
+}
+
+.room-card.libre .room-header{
+  border-bottom: .1vh solid var(--success);
+  
 }
 
 .room-numero {
@@ -1168,8 +1172,8 @@ img#usrImg {
 }
 
 .room-card.libre .room-estado-dot {
-  background: var(--exito);
-  box-shadow: 0 0 .5vh var(--exito);
+  background: var(--success);
+  box-shadow: 0 0 .5vh var(--success);
 }
 
 .room-card.ocupado .room-estado-dot {
@@ -1235,12 +1239,12 @@ img#usrImg {
 
 .btn-view {
   background: rgba(16, 185, 129, 0.1);
-  color: var(--exito);
+  color: var(--success);
 }
 
 .btn-view:hover {
-  background: var(--exito);
-  color: var(--blanc);
+  background: var(--success);
+  color: var(--F);
   transform: scale(1.05);
 }
 
@@ -1251,18 +1255,18 @@ img#usrImg {
 
 .btn-edit:hover {
   background: var(--info);
-  color: var(--blanc);
+  color: var(--F);
   transform: scale(1.05);
 }
 
 .btn-checkin {
   background: rgba(34, 197, 94, 0.1);
-  color: var(--exito);
+  color: var(--success);
 }
 
 .btn-checkin:hover {
-  background: var(--exito);
-  color: var(--blanc);
+  background: var(--success);
+  color: var(--F);
   transform: scale(1.05);
 }
 
@@ -1273,7 +1277,7 @@ img#usrImg {
 
 .btn-checkout:hover {
   background: var(--error);
-  color: var(--blanc);
+  color: var(--F);
   transform: scale(1.05);
 }
 
@@ -1285,7 +1289,7 @@ img#usrImg {
 .btn-cleaning:hover,
 .btn-cleaning.active {
   background: var(--info);
-  color: var(--blanc);
+  color: var(--F);
   transform: scale(1.05);
 }
 
@@ -1296,7 +1300,7 @@ img#usrImg {
 
 .btn-delete:hover {
   background: var(--error);
-  color: var(--blanc);
+  color: var(--F);
   transform: scale(1.05);
 }
 
@@ -1314,7 +1318,7 @@ img#usrImg {
   border-color: var(--bg2);
   box-shadow: 0 0 0 .3vh var(--bg1);
   transform: translateY(-.1vh);
-  background: var(--blanc);
+  background: var(--F);
 }
 
 .btn-save {
@@ -1373,7 +1377,7 @@ img#usrImg {
 .page-btn {
   padding: .8vh 1.2vw;
   border: .15vh solid var(--bdr);
-  background: var(--blanc);
+  background: var(--F);
   color: var(--tx);
   border-radius: .8vh;
   cursor: pointer;

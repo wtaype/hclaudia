@@ -23,9 +23,27 @@ export function configReg(user) { usr = user; initForm(); confFechas(); cargarHa
 const initForm = () => {
   $('#regForm').off('submit').on('submit', async e => { e.preventDefault(); await guardar(); });
   $('#diasReservados, #checkIn').on('input change', calcFechas);
-  $('#numDocumento').on('input', validDoc);
-  $('#precio').on('input', validPrecio);
+  
+  // 🔥 REQUIRED: verde si hay valor, rojo si vacío
+  $('#nombreCliente, #checkIn, #checkOut').on('change input', function() {
+    $(this).css('border-color', $(this).val() ? 'var(--success)' : 'var(--error)');
+  });
+  
+  // 🔥 VALIDACIONES ESPECÍFICAS
+  $('#precio').on('change input', validPrecio);
+  $('#tipoDocumento, #numDocumento').on('change input', validDoc);
+  
+  // 🔥 OPCIONALES: siempre verde si hay valor
+  $('#estadoPago, #moneda, #metodoPago, #desayuno, #carroPlaca, #celular, #qPersonas, #comentario, #diasReservados, #nhabitacion').on('change input', function() {
+    if ($(this).val()) $(this).css('border-color', 'var(--success)');
+  });
+  
+  // 🔥 COLOREAR SELECTS CON VALOR INICIAL
+  $('#tipoDocumento, #estadoPago, #moneda, #desayuno, #metodoPago').each(function() {
+    if ($(this).val()) $(this).css('border-color', 'var(--success)');
+  });
 };
+
 
 const confFechas = () => {
   const ahora = new Date(), opts = { timeZone: 'America/Lima' };
@@ -76,13 +94,18 @@ const calcFechas = () => {
 
 const validDoc = () => {
   const tipo = $('#tipoDocumento').val(), num = $('#numDocumento').val();
-  const valido = (tipo === 'DNI' && num.length === 8) || (tipo !== 'DNI' && num.length >= 6);
-  $('#numDocumento').css('border-color', valido ? 'var(--exito)' : 'var(--error)');
+  $('#tipoDocumento').css('border-color', tipo ? 'var(--success)' : '');
+  if (!num) return $('#numDocumento').css('border-color', '');
+  const ok = num.length >= 5;
+  $('#numDocumento').css('border-color', ok ? 'var(--success)' : 'var(--error)');
 };
 
+
 const validPrecio = () => {
-  const precio = parseFloat($('#precio').val());
-  $('#precio').css('border-color', precio > 0 && precio <= 2000 ? 'var(--exito)' : 'var(--error)');
+  const val = $('#precio').val();
+  if (!val) return $('#precio').css('border-color', '');
+  const ok = parseFloat(val) > 0 && parseFloat(val) <= 2000;
+  $('#precio').css('border-color', ok ? 'var(--success)' : 'var(--error)');
 };
 
 async function guardar() {
