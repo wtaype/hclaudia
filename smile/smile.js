@@ -1,5 +1,6 @@
 import './smile.css';
 import './wiupdate.js';
+import './footer.js';
 import $ from 'jquery';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import { auth, db } from '../firebase/init.js';
@@ -105,9 +106,7 @@ function smileContenido(wi) {
       </div>
     </div>
 
-    <footer class="foo hwb txc">
-      <p>Creado con <i class="wicon wi-corazon"></i> by <a class="ftx lkme" href="https://wtaype.github.io/" target="_blank">@wilder.taype</a> 2025 - HClaudia</p>
-    </footer>
+    ${footer()}
   `);
 
   habs();

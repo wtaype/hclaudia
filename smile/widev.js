@@ -1,5 +1,5 @@
 import $ from 'jquery'; 
-import { doc, setDoc, getDoc, serverTimestamp} from 'firebase/firestore';
+import { collection, query, where, getDocs, setDoc, doc, serverTimestamp } from 'firebase/firestore';
 
 export const wiTema = (() => {
   const tonos = [["Cielo","#0EBEFF"],["Dulce","#FF5C69"],["Paz","#29C72E"],["Mora","#7000FF"],["Futuro","#21273B"]];
@@ -35,27 +35,67 @@ export const wiTema = (() => {
   };
 })();
 
-// 🇵🇪 OBTENER FECHA/HORA ACTUAL DE PERÚ
-export const fechaPeru = (tipo = 'full') => {
+
+// ==============================
+// 🔥 FECHA CON HORA ACTUAL PARA FIRESTORE
+// ==============================
+export const savebd = (fecha) => {
+  const [año, mes, dia] = fecha.split('-').map(Number);
   const ahora = new Date();
-  const opciones = { timeZone: 'America/Lima' };
-  
-  if (tipo === 'input') {
-    // Para inputs datetime-local: 2025-11-02T23:26
-    const año = ahora.toLocaleString('en-US', { ...opciones, year: 'numeric' });
-    const mes = ahora.toLocaleString('en-US', { ...opciones, month: '2-digit' });
-    const dia = ahora.toLocaleString('en-US', { ...opciones, day: '2-digit' });
-    const hora = ahora.toLocaleString('en-US', { ...opciones, hour: '2-digit', hour12: false });
-    const min = ahora.toLocaleString('en-US', { ...opciones, minute: '2-digit' });
-    return `${año}-${mes}-${dia}T${hora}:${min}`;
+  const fechaObj = new Date(año, mes - 1, dia, ahora.getHours(), ahora.getMinutes(), ahora.getSeconds());
+  return Timestamp.fromDate(fechaObj);
+};
+
+export const getbd = (tm) => {
+  if (!tm) return '';
+  const dt = tm.toDate?.()
+    || (tm._seconds && new Date(tm._seconds * 1000)) || (tm.seconds && new Date(tm.seconds * 1000)) || new Date(tm);
+  return isNaN(dt) ? '' : `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}/${dt.getFullYear()}`;
+};
+
+// ==== 📋 COPIAR PORTAPAPELES ==== 
+export const wicopy = (txt, elm = null, msg = '¡Copiado!') => {
+  let cnt;
+
+  // resolver texto
+  if (txt instanceof $) {                          // jQuery
+    cnt = txt.text() || txt.val() || '';
+  } else if (txt && (txt.nodeType === 1 || txt.nodeType === 3)) { // DOM
+    cnt = txt.textContent || txt.value || '';
+  } else if (typeof txt === 'string' && /^[.#\[]/.test(txt) && $(txt).length) { // selector
+    const $el = $(txt);
+    cnt = $el.text() || $el.val() || '';
+  } else {
+    cnt = String(txt ?? '');
   }
-  
-  // Para mostrar: 02/11/2025 11:26 pm
-  const dia = ahora.toLocaleString('es-PE', { ...opciones, day: '2-digit' });
-  const mes = ahora.toLocaleString('es-PE', { ...opciones, month: '2-digit' });
-  const año = ahora.toLocaleString('es-PE', { ...opciones, year: 'numeric' });
-  const hora = ahora.toLocaleString('es-PE', { ...opciones, hour: '2-digit', minute: '2-digit', hour12: true });
-  return `${dia}/${mes}/${año} ${hora}`;
+
+  const fin = () => elm ? witip(elm, msg, 'success', 1500) : Notificacion(msg, 'success', 1500);
+
+  const copTa = () => {
+    const $t = $('<textarea>').val(cnt).appendTo('body');
+    $t[0].select();
+    document.execCommand('copy');
+    $t.remove();
+    fin();
+  };
+
+  // api moderna + fallback
+  navigator.clipboard?.writeText
+    ? navigator.clipboard.writeText(cnt).then(fin).catch(copTa)
+    : copTa();
+};
+
+export const wiSpin = (b, on = true, txt = '') => {
+  const $b = $(b);
+  if (on) {
+    const texto = txt || $b.text().trim();
+    $b.data('txt', texto)
+      .prop('disabled', true)
+      .html(`${texto} <i class="fas fa-spinner fa-spin"></i>`);
+  } else {
+    $b.prop('disabled', false)
+      .text($b.data('txt') || txt || 'Continuar');
+  }
 };
 
 // ==============================
@@ -68,13 +108,6 @@ export const adrm = (a, b) => {
 export function adtm(se,cl,ti,tf){
   $(se).text(ti).addClass(cl).delay(1800).queue(q=>$(se).text(tf).removeClass(cl).dequeue())
 } 
-
-export const infoo = (() => {
-  const f = () => {const d=new Date(); $('.wty').text(d.getFullYear()); $('.wtu').text(d.toLocaleString()); $(document).off('click.infoo','.abw,.abwok').on('click.infoo','.abw,.abwok',function(){const id=this.id||''; if(navigator.clipboard&&id) navigator.clipboard.writeText(id).catch(()=>{}); $('.abwc').toggleClass('dpn');});};
-  $('.wty,.wtu,.abw,.abwok').length ? f() : new MutationObserver(m => m.some(({addedNodes}) => [...addedNodes].some(n => n.querySelector?.('.wty,.wtu,.abw,.abwok'))) && (f(), true)).observe(document.body, {childList: true, subtree: true});
-  return f;
-})();
-
 
 export const adup = (x, y) => {
   $(x).addClass('updating').text(y);
@@ -108,32 +141,10 @@ export const Saludar = () => {
 }; 
 
 
-
-export const fechaCheck = (stamp, fmt = 'fecha') => {
-  if (!stamp) return '';
-  try {
-    const d = stamp.toDate ? stamp.toDate() : new Date(stamp);
-    if (isNaN(d.getTime())) return ''; // 🔥 Validación clave!
-    return fmt === 'hora' ? d.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit', hour12:false}) :
-           fmt === 'full' ? `${d.toLocaleDateString('es-PE')} ${d.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit', hour12:false})}` :
-           d.toLocaleDateString('es-PE');
-  } catch { return ''; }
-};
-
-// AccederRol
-// export const accederRol = (rol) => {
-//   window.location.href = { smiletop: '/smiletop.html' }[rol] || '/smile.html';
-// };
-
 export const accederRol = (rol) => {
   const to = rol === 'smiletop' ? 'smiletop.html' : 'smile.html';
   window.location.href = new URL(to, window.location.href).toString();
 }; 
-
-export const nombrejunto = (texto) => {
-  return texto.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
-};
-
 
 // RIGHT NOTIFICATIONS WITH X 
 export function Notificacion(mensaje, tipo = 'error', tiempo= 3000) {
@@ -227,10 +238,9 @@ export const Mensaje = (mensaje, tipo = 'success') => {
     setTimeout(() => $alerta.fadeOut(300, () => $alerta.remove()), 3000);
 };
 
-// Primer letra mayusculas
-export const Capi = (str) => {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-}; 
+// Primer letra mayusculas + mayusculas todo
+export const Capi = ltr => ltr[0].toUpperCase() + ltr.slice(1);
+export const Mayu = ltr => ltr.toUpperCase();
 
 // GUARDANDO EN LOCAL STORAGE EN HORAS 
 export function savels(clave, valor, horas) {
@@ -262,36 +272,6 @@ export function getls(clave) {
   } catch(e){console.error('Error getls:', e); removels(clave); return null;}
 }
 
-
-// ✅ GUARDAR OBJECTS 
-// const userData = {
-//   nombre: 'Wilder',
-//   rol: 'smile',
-// };
-// savels('userData', userData, 120);
-
-// // 🔍 Consultar objeto (súper fácil)
-// const user = getls('userData');
-// if (user) {
-//   console.log(user.nombre);              // "Wilder"
-//   console.log(user.rol);                 // "smiletop"
-// }
-// 🎯 Usar en tu app directamente
-// $('#welcome').text(`Hola ${user.nombre}!`);
-// $('#email').text(user.email);
-
-// ✅ GUARDAR ARRAYS 
-// const acciones = ['login', 'updateProfile', 'logout'];
-// savels('userActions', acciones, 45);
-
-// // 🔍 Consultar array simple
-// const actions = getls('userActions');
-// if (actions) {
-//   console.log(actions[0]);             // "login"
-//   console.log(actions.includes('logout')); // true
-//   console.log(actions.join(', '));     // "login, updateProfile, logout"
-// }
-// Remove a key from localStorage
 export function removels(...claves) {
   claves.forEach(clave => {
     if (clave && typeof clave === 'string') {
@@ -632,24 +612,35 @@ export const fechaLetra = (fecha, formato) => {
   for (const [ms, unit] of unidades) { const cant = Math.floor(dif / ms); if (cant > 0) return new Date(fecha) < new Date() ? `Hace ${cant}${unit}` : `En ${cant}${unit}`; }
   return 'Ahora mismo';
 };
+export const fechaCheck = (stamp, fmt = 'fecha') => {
+  if (!stamp) return '';
+  try {
+    const d = stamp.toDate ? stamp.toDate() : new Date(stamp);
+    if (isNaN(d.getTime())) return ''; // 🔥 Validación clave!
+    return fmt === 'hora' ? d.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit', hour12:false}) :
+           fmt === 'full' ? `${d.toLocaleDateString('es-PE')} ${d.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit', hour12:false})}` :
+           d.toLocaleDateString('es-PE');
+  } catch { return ''; }
+};
 
-export function wiUsuario(user = undefined, prop = undefined) {
-  if (user === undefined) {
-    // Solo obtener
-    const usuario = getls('usuarioAuth');
-    if (prop && usuario) {
-      return usuario[prop] || null;
-    }
-    return usuario;
-  } else if (user === null) {
-    // Limpiar
-    removels('usuarioAuth');
-  } else if (typeof user === 'string') {
-    // Si se pasa string como primer parámetro, es una propiedad
-    const usuario = getls('usuarioAuth');
-    return usuario?.[user] || null;
-  } else {
-    // Guardar usuario
-    savels('usuarioAuth', user);
+export const fechaPeru = (tipo = 'full') => {
+  const ahora = new Date();
+  const opciones = { timeZone: 'America/Lima' };
+  
+  if (tipo === 'input') {
+    // Para inputs datetime-local: 2025-11-02T23:26
+    const año = ahora.toLocaleString('en-US', { ...opciones, year: 'numeric' });
+    const mes = ahora.toLocaleString('en-US', { ...opciones, month: '2-digit' });
+    const dia = ahora.toLocaleString('en-US', { ...opciones, day: '2-digit' });
+    const hora = ahora.toLocaleString('en-US', { ...opciones, hour: '2-digit', hour12: false });
+    const min = ahora.toLocaleString('en-US', { ...opciones, minute: '2-digit' });
+    return `${año}-${mes}-${dia}T${hora}:${min}`;
   }
-}
+  
+  // Para mostrar: 02/11/2025 11:26 pm
+  const dia = ahora.toLocaleString('es-PE', { ...opciones, day: '2-digit' });
+  const mes = ahora.toLocaleString('es-PE', { ...opciones, month: '2-digit' });
+  const año = ahora.toLocaleString('es-PE', { ...opciones, year: 'numeric' });
+  const hora = ahora.toLocaleString('es-PE', { ...opciones, hour: '2-digit', minute: '2-digit', hour12: true });
+  return `${dia}/${mes}/${año} ${hora}`;
+};
