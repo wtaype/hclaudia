@@ -1,10 +1,12 @@
 import $ from 'jquery';
-export { footer }; window.footer = footer;
+// export { footer }; window.footer = footer;
+export { footer };
 
-const lanzamiento = 2024;
-const autor = '@wilder.taype';
-const link = 'https://wtaype.github.io/';
-const version = 'v15';
+export let app = 'Registros HClaudia'
+export let lanzamiento = 2024;
+export let autor = '@wilder.taype';
+export let link = 'https://wtaype.github.io/';
+export let version = 'v15';
 
 
 /** ACTUALIZACION TAG version dia hora   [START]  
@@ -15,7 +17,7 @@ git push origin main
 git tag v15 -m "Version v15" ; git push origin v15
 
  ACTUALIZACION TAG[END] */ 
-
+$('title').text(`${app} - ${version}`); //Titulo del app
 function footer(){
   const ahora = new Date();
   return `

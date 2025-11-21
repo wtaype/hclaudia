@@ -1,6 +1,6 @@
 import './smile.css';
 import './wiupdate.js';
-import './footer.js';
+import {footer} from './footer.js';
 import $ from 'jquery';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import { auth, db } from '../firebase/init.js';

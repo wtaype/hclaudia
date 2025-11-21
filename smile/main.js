@@ -4,7 +4,7 @@ import { auth, db } from '../firebase/init.js';
 import { getFirestore, setDoc, getDoc, deleteDoc, onSnapshot, doc, collection, getDocs, serverTimestamp, query, where, orderBy, limit } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, sendEmailVerification, sendPasswordResetEmail } from "firebase/auth";
 import { Capi, Mensaje, Notificacion, savels, getls, removels, accederRol, showLoading, witip, fechaLocal, calcularEdad } from './widev.js'; //Tools geniales 
-
+import { app, version } from './footer.js';
 // =====================================================
 // # PARA INTERACCIÓN GENERAL
 // ====================================================
